@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pip: step 1 character</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&display=swap">
+<style>
+:root{--bg:#191A2B;--ink:#EDEBFA;--muted:#A3A1C2;--chip:#262842;--line:#3A3D63;--shell:#B9E6D6;--screen:#0E1020;--glow:#7DF5CB;--blush:#FF8FA3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#F1F3FA;--ink:#1B1C33;--muted:#5F6285;--chip:#E1E5F3;--line:#C9CEE6}}
+:root[data-theme="light"]{--bg:#F1F3FA;--ink:#1B1C33;--muted:#5F6285;--chip:#E1E5F3;--line:#C9CEE6}
+:root[data-theme="dark"]{--bg:#191A2B;--ink:#EDEBFA;--muted:#A3A1C2;--chip:#262842;--line:#3A3D63}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:600;min-height:100%}
+main{max-width:520px;margin:0 auto;padding:20px 18px 40px}
+h1{font-size:1.15rem;font-weight:800;margin:0 0 2px}
+.sub{color:var(--muted);margin:0 0 18px;font-size:.92rem;line-height:1.4}
+#stage{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:6px}
+#dev{width:min(78vw,300px);aspect-ratio:1;background:var(--shell);border-radius:34%;padding:9%;position:relative;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;box-shadow:0 14px 30px rgba(0,0,0,.28),inset 0 -6px 0 rgba(0,0,0,.08)}
+#dev::before{content:"";position:absolute;top:-7%;left:50%;width:14%;height:11%;margin-left:-7%;border:5px solid var(--shell);border-bottom:0;border-radius:40% 40% 0 0}
+#scr{width:100%;height:100%;background:var(--screen);border-radius:26%;display:block}
+#say{min-height:2.2em;text-align:center;font-weight:800;font-size:1.05rem}
+.sec{margin-top:18px}
+.lab{color:var(--muted);font-size:.85rem;margin:0 0 8px}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-weight:800;color:var(--ink);background:var(--chip);border:1.5px solid var(--line);border-radius:999px;padding:9px 15px;cursor:pointer;min-height:40px}
+button:hover{border-color:var(--glow)}
+button:focus-visible,#dev:focus-visible{outline:3px solid var(--glow);outline-offset:3px}
+button.go{background:var(--glow);color:#0E1020;border-color:var(--glow)}
+#ask{display:none;margin-top:16px;padding:12px 14px;border:1.5px solid var(--line);border-radius:16px;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between}
+#ask.on{display:flex}
+#tally{list-style:none;padding:0;margin:0;color:var(--muted);font-size:.92rem;line-height:1.7}
+#tally b{color:var(--ink)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Pip, step 1</h1>
+  <p class="sub">Tap, hold or shake the little guy. Then say whether it made you smile. Those answers are the test.</p>
+
+  <div id="stage">
+    <div id="dev" role="button" tabindex="0" aria-label="Pip. Tap to poke, hold to pet.">
+      <svg id="scr" viewBox="0 0 200 130" aria-hidden="true">
+        <g id="bks"><circle id="kL" r="9" fill="var(--blush)"/><circle id="kR" r="9" fill="var(--blush)"/></g>
+        <rect id="eL" fill="var(--glow)"/><rect id="eR" fill="var(--glow)"/>
+        <polygon id="tL" fill="var(--screen)"/><polygon id="tR" fill="var(--screen)"/>
+        <ellipse id="bL" fill="var(--screen)"/><ellipse id="bR" fill="var(--screen)"/>
+        <path id="hL" d="M0 6C-12-4-8-14 0-8 8-14 12-4 0 6Z" fill="var(--blush)"/>
+        <path id="hR" d="M0 6C-12-4-8-14 0-8 8-14 12-4 0 6Z" fill="var(--blush)"/>
+        <path id="m" fill="var(--glow)" stroke="var(--glow)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+        <g id="zz" fill="var(--glow)" font-family="Nunito,sans-serif" font-weight="800"><text id="z1" x="150" y="34" font-size="20">z</text><text id="z2" x="166" y="20" font-size="14">z</text></g>
+        <path id="sw" d="M0-9C6-1 7 4 0 6-7 4-6-1 0-9Z" fill="#8FD3FF"/>
+        <g id="sp" fill="var(--glow)"><path id="s1" d="M0-6 1.5-1.5 6 0 1.5 1.5 0 6-1.5 1.5-6 0-1.5-1.5Z"/><path id="s2" d="M0-6 1.5-1.5 6 0 1.5 1.5 0 6-1.5 1.5-6 0-1.5-1.5Z"/><path id="s3" d="M0-6 1.5-1.5 6 0 1.5 1.5 0 6-1.5 1.5-6 0-1.5-1.5Z"/></g>
+      </svg>
+    </div>
+    <div id="say" aria-live="polite">hi.</div>
+  </div>
+
+  <div id="ask"><span>Did that make you smile?</span><span class="row"><button class="go" id="yes">Yes</button><button id="no">Not really</button></span></div>
+
+  <div class="sec"><p class="lab">Reactions</p>
+    <div class="row" id="acts">
+      <button data-a="tap">Poke</button><button data-a="pet">Pet</button><button data-a="shake">Shake</button><button data-a="tiltL">Tilt left</button><button data-a="tiltR">Tilt right</button><button data-a="flip">Flip</button><button data-a="sleep">Sleep</button>
+    </div>
+  </div>
+  <div class="sec"><p class="lab">Preview a mood</p><div class="row" id="moodsRow"></div></div>
+  <div class="sec"><p class="lab">On a phone, use real motion</p><button id="sens">Turn on motion sensors</button></div>
+  <div class="sec"><p class="lab">Smile tally</p><ul id="tally"><li>No answers yet.</li></ul></div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const BASE={ew:34,eh:44,ex:36,ey:0,lt:0,lb:0,s:0,mw:12,mc:6,mo:0,my:90,bl:.25,eo:1,heart:0,zzz:0,sweat:0,spark:0};
+const MOODS={
+ neutral:{},
+ happy:{eh:40,lb:.35,mc:16,mo:6,mw:16,bl:.85},
+ excited:{ew:38,eh:52,mc:18,mo:14,mw:16,bl:1,spark:1},
+ sleepy:{eh:40,lt:.65,mc:2,mw:8,bl:.2,zzz:1},
+ curious:{ew:32,eh:50,ey:-2,mw:7,mc:-2,mo:5},
+ sad:{eh:40,lt:.3,s:-10,mc:-10,mw:12,bl:0,sweat:1},
+ annoyed:{lt:.45,s:10,mc:-4,mw:14,bl:0},
+ love:{eo:0,heart:1,mc:16,mo:4,mw:14,bl:1},
+ surprised:{ew:38,eh:56,mw:6,mc:0,mo:16,my:94},
+ dizzy:{eh:40,mc:0,mo:6,mw:12}
+};
+let cur={...BASE},tgt={...BASE},gx=0,gy=0,gtx=0,gty=0,rot=0,trot=0,shk=0,tshk=0,spin=0,blinkS=1,blinking=false;
+let mood='neutral',ptr={x:0,y:0},sensorOn=false,sensG={x:0,y:0};
+function setMood(n){mood=n;tgt={...BASE,...MOODS[n]};}
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+
+function render(t){
+  const c=cur,eh=Math.max(1,c.eh*blinkS);
+  [-1,1].forEach((sd,i)=>{
+    const k=i?'R':'L',cx=100+sd*c.ex+gx,cy=50+c.ey+gy,top=cy-eh/2,bot=cy+eh/2;
+    const e=$('e'+k);e.setAttribute('x',cx-c.ew/2);e.setAttribute('y',top);e.setAttribute('width',c.ew);e.setAttribute('height',eh);e.setAttribute('rx',c.ew*.35);e.setAttribute('opacity',c.eo);
+    const x0=cx-c.ew/2-3,x1=cx+c.ew/2+3,base=top+c.lt*eh,s=c.s,ly=base+(sd<0?-s:s),ry=base+(sd<0?s:-s);
+    $('t'+k).setAttribute('points',`${x0},${top-6} ${x1},${top-6} ${x1},${ry} ${x0},${ly}`);
+    const b=$('b'+k);b.setAttribute('cx',cx);b.setAttribute('cy',bot+eh*.12);b.setAttribute('rx',c.ew*.8);b.setAttribute('ry',Math.max(0,c.lb*eh*1.3));
+    $('h'+k).setAttribute('transform',`translate(${cx} ${cy}) scale(1.7)`);$('h'+k).setAttribute('opacity',c.heart);
+    const bk=$('k'+k);bk.setAttribute('cx',100+sd*58);bk.setAttribute('cy',80);bk.setAttribute('opacity',c.bl);
+  });
+  const mw=c.mw,my=c.my,wob=mood==='dizzy'&&!reduce?Math.sin(t/90)*5:0;
+  $('m').setAttribute('d',`M${100-mw} ${my} Q100 ${my+(c.mc+wob)*2} ${100+mw} ${my} Q100 ${my+(c.mc+c.mo+wob)*2} ${100-mw} ${my}Z`);
+  const fl=reduce?0:Math.sin(t/500)*3;
+  $('zz').setAttribute('opacity',c.zzz);$('z1').setAttribute('y',34+fl);$('z2').setAttribute('y',20-fl);
+  $('sw').setAttribute('opacity',c.sweat);$('sw').setAttribute('transform',`translate(160 ${34+fl})`);
+  $('sp').setAttribute('opacity',c.spark);
+  [[30,26],[170,30],[158,98]].forEach((p,i)=>{const sc=1+(reduce?0:Math.sin(t/200+i*2)*.4);$('s'+(i+1)).setAttribute('transform',`translate(${p[0]} ${p[1]}) scale(${sc})`)});
+  $('dev').style.transform=`translateX(${shk*Math.sin(t/25)*7}px) rotate(${rot+(shk?Math.sin(t/30)*4*shk:0)}deg)`;
+}
+let last=performance.now();
+function frame(t){
+  const dt=Math.min(.05,(t-last)/1000);last=t;const k=1-Math.exp(-dt*11);
+  for(const key in cur)cur[key]+=(tgt[key]-cur[key])*k;
+  let tx=gtx,ty=gty;
+  if(mood==='dizzy'&&!reduce){tx=Math.cos(t/110)*9;ty=Math.sin(t/110)*5;}
+  gx+=(tx-gx)*(1-Math.exp(-dt*14));gy+=(ty-gy)*(1-Math.exp(-dt*14));
+  rot+=(trot-rot)*(1-Math.exp(-dt*9));shk+=(tshk-shk)*(1-Math.exp(-dt*20));
+  const bt=blinking?.08:1;blinkS+=(bt-blinkS)*(1-Math.exp(-dt*35));
+  render(t);requestAnimationFrame(frame);
+}
+(function blink(){setTimeout(()=>{if(mood!=='sleepy'||Math.random()<.3){blinking=true;setTimeout(()=>{blinking=false},110);if(Math.random()<.2)setTimeout(()=>{blinking=true;setTimeout(()=>{blinking=false},110)},230)}blink()},1800+Math.random()*3200)})();
+
+let sayT;function say(s){$('say').textContent=s;}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let token=0,sleeping=false,lastAct=Date.now(),curAction=null;
+
+const R={
+ tap:[{m:'happy',t:'hehe, hi!',ms:1500,g:[0,2]}],
+ pet:[{m:'love',t:'purrrr',ms:2400,g:[0,3]}],
+ shake:[{m:'dizzy',t:'woah woah woah',ms:1800,sh:1},{m:'annoyed',t:'okay okay, stop!',ms:1500,g:[0,0]}],
+ tiltL:[{m:'curious',t:'ooh, leaning left',ms:1700,r:-14,g:[-12,0]}],
+ tiltR:[{m:'curious',t:'ooh, leaning right',ms:1700,r:14,g:[12,0]}],
+ flip:[{m:'surprised',t:'whoa! upside down!',ms:1600,r:180},{m:'annoyed',t:'down. now. please.',ms:1300,r:180}]
+};
+const WAKE=[{m:'surprised',t:'huh?!',ms:700},{m:'happy',t:'morning!',ms:900}];
+
+async function run(name){
+  const my=++token;lastAct=Date.now();
+  if(name==='sleep'){await goSleep();return;}
+  let steps=R[name];if(sleeping){steps=WAKE.concat(steps);sleeping=false;}
+  curAction=name;$('ask').classList.remove('on');
+  for(const s of steps){
+    if(my!==token)return;
+    setMood(s.m);say(s.t);tshk=s.sh?1:0;trot=s.r||0;
+    if(s.g){gtx=s.g[0];gty=s.g[1];}
+    await sleep(s.ms);
+  }
+  if(my!==token)return;
+  tshk=0;trot=0;gtx=0;gty=0;setMood('neutral');say('');
+  $('ask').classList.add('on');
+}
+async function goSleep(){
+  token++;sleeping=true;tshk=0;trot=0;gtx=0;gty=2;setMood('sleepy');say('zzz...');$('ask').classList.remove('on');
+}
+setInterval(()=>{if(!sleeping&&Date.now()-lastAct>15000&&!$('ask').classList.contains('on')){goSleep();}},1000);
+
+const tally={};
+function answer(y){
+  if(!curAction)return;const t=tally[curAction]||(tally[curAction]={y:0,n:0});y?t.y++:t.n++;
+  $('ask').classList.remove('on');
+  $('tally').innerHTML=Object.entries(tally).map(([k,v])=>`<li><b>${k}</b>: ${v.y} of ${v.y+v.n} smiled</li>`).join('');
+  setMood('neutral');say(y?'yay.':'noted.');
+}
+$('yes').onclick=()=>answer(true);$('no').onclick=()=>answer(false);
+
+$('acts').addEventListener('click',e=>{const a=e.target.dataset.a;if(a)run(a)});
+Object.keys(MOODS).forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{token++;sleeping=n==='sleepy';lastAct=Date.now();tshk=0;trot=0;setMood(n);say(n);$('ask').classList.remove('on')};$('moodsRow').appendChild(b)});
+
+const dev=$('dev');let holdT=null,held=false;
+dev.addEventListener('pointerdown',()=>{held=false;holdT=setTimeout(()=>{held=true;run('pet')},650)});
+dev.addEventListener('pointerup',()=>{clearTimeout(holdT);if(!held)run('tap')});
+dev.addEventListener('pointerleave',()=>clearTimeout(holdT));
+dev.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run('tap')}});
+
+document.addEventListener('pointermove',e=>{
+  if(sensorOn||curAction&&$('ask').classList.contains('on')===false&&token&&false)return;
+  const r=dev.getBoundingClientRect(),dx=(e.clientX-(r.left+r.width/2))/innerWidth,dy=(e.clientY-(r.top+r.height/2))/innerHeight;
+  if(!sleeping&&mood==='neutral'){gtx=clamp(dx*28,-11,11);gty=clamp(dy*18,-7,7);}
+});
+
+$('sens').onclick=async()=>{
+  try{
+    if(typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission){const r=await DeviceMotionEvent.requestPermission();if(r!=='granted'){$('sens').textContent='Permission denied';return;}}
+    let cool=0;
+    addEventListener('devicemotion',e=>{const a=e.accelerationIncludingGravity;if(!a)return;const m=Math.hypot(a.x||0,a.y||0,a.z||0);if(Math.abs(m-9.8)>14&&Date.now()>cool){cool=Date.now()+2500;run('shake')}});
+    addEventListener('deviceorientation',e=>{if(sleeping||mood!=='neutral')return;gtx=clamp((e.gamma||0)/45*11,-11,11);gty=clamp(((e.beta||45)-45)/45*7,-7,7)});
+    sensorOn=true;$('sens').textContent='Sensors on: shake and tilt your phone';
+  }catch(err){$('sens').textContent='Sensors not available here';}
+};
+requestAnimationFrame(frame);
+setTimeout(()=>run('tap'),500);
+</script>
+</body>
+</html>

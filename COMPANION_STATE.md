@@ -75,13 +75,16 @@ flowchart TD
     S4 --> S5["Stage 5: Battery & Shell Design\n(Current-Sized Cell, Modular Snap-On Pack, 3D Shell)"]
 ```
 
-### Stage 1: Phone Character (The "Smile Test" & Emotional Core)
+### Stage 1: Phone Character (The "Smile Test" & Emotional Core) — *(COMPLETE - WEB PWA IMPLEMENTED)*
 - **Goal**: Validate that the character generates genuine, spontaneous user delight (*"The Smile Test"*) before manufacturing hardware.
-- **Key Modules**:
-  - Full procedural vector character (eyes, mouth, waving hands, tapping feet, chassis glow).
-  - Mood & temperament model (joy, boredom, cheekiness, sleepy, startled, annoyed).
-  - Simulated physical dynamics: phone shake (controls morph), tilt/gyroscope parallax, and idle curiosity.
-  - "Smile Test" benchmark: Put prototype in front of 5–10 real people. If they do not smile within 10 seconds of interaction, refine animation timing and charm before moving to physical manufacturing.
+- **Status**: **Fully built and running as a zero-dependency mobile PWA in `web/`**:
+  - `web/moods.js`: 10 core moods (`neutral`, `happy`, `excited`, `sleepy`, `curious`, `sad`, `annoyed`, `love`, `surprised`, `dizzy`), BASE target parameters, and centralized `CONSTANTS`.
+  - `web/reactions.js`: Cancel-token async step sequences (`tap`, `pet`, `shake`, `tiltL`, `tiltR`, `flip`, `sleep`, `wake`), random non-repeating idle micro-behaviors (4-8s), and the 3-zone Shake-to-Controls morph (`⏮`, `⏯`, `⏭`).
+  - `web/character.js`: 60 FPS HTML5 Canvas 2D spring physics engine faithfully porting the PySide6 anatomy: sky-blue chassis, head gloss arc, amber ear nubs with mint LEDs, creamy belly patch, pulsing ruby heart gem, rosy blush cheeks, deep sapphire eyes with dual specular sparkles and happy `^ ^` crescents, mitten paws with waving, and boots with sole treads.
+  - `web/sensors.js`: `devicemotion` hardware shake with acceleration delta threshold, `deviceorientation` tilt & upside-down flip, iOS 13+ permission flow, and touch Poke vs Pet (hold).
+  - `web/smiletest.js`: Post-reaction "Did that make you smile?" prompt, `localStorage` tally, time-to-first-smile stopwatch, JSON telemetry export, and `?test=1` URL mode that hides debug buttons for real-world user testing.
+  - `web/manifest.json` & `web/sw.js`: Installable PWA with offline caching.
+  - `web/screenshots/`: Automated headless browser verification captures of all 10 moods and key reactions.
 
 ### Stage 2: Intent Layer (Deterministic + Banter Fallback)
 - **Goal**: Zero user confusion; snappy (<50ms) action execution; 0% robotic error rates.

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Physical AI Companion — Stage 1 Smile Test</title>
+  
+  <!-- PWA & Mobile Meta -->
+  <meta name="theme-color" content="#F8FAFC">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- Google Fonts: Nunito & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --ink: #0F172A;
+      --muted: #64748B;
+      --border: #E2E8F0;
+      --chip: #F1F5F9;
+      --primary: #0284C7;
+      --primary-hover: #0369A1;
+      --accent: #38BDF8;
+      --success: #10B981;
+      --ruby: #F43F5E;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+      font-weight: 700;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    main {
+      width: 100%;
+      max-width: 460px;
+      padding: 16px 18px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-top: 2px;
+      line-height: 1.35;
+    }
+
+    /* Stage & Canvas */
+    #stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .canvas-container {
+      width: min(84vw, 340px);
+      aspect-ratio: 1;
+      position: relative;
+      cursor: pointer;
+    }
+
+    #companionCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    /* Speech Dialogue Balloon */
+    #say {
+      min-height: 40px;
+      padding: 8px 18px;
+      background: var(--card-bg);
+      border: 2px solid var(--accent);
+      border-radius: 999px;
+      box-shadow: 0 4px 16px rgba(148, 163, 184, 0.25);
+      color: var(--ink);
+      font-size: 0.96rem;
+      font-weight: 800;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 90%;
+      transition: all 0.2s ease;
+    }
+
+    /* Smile Test Prompt Card */
+    #smilePrompt {
+      display: none;
+      background: #FFFFFF;
+      border: 2px solid #0284C7;
+      border-radius: 20px;
+      padding: 14px 16px;
+      box-shadow: 0 8px 24px rgba(2, 132, 199, 0.18);
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #smilePrompt.visible {
+      display: flex;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1.0); opacity: 1; }
+    }
+
+    .prompt-label {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .prompt-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      font: inherit;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 9px 16px;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--chip);
+      color: var(--ink);
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    button:hover {
+      border-color: var(--primary);
+      background: #F0F9FF;
+    }
+
+    button:active {
+      transform: scale(0.96);
+    }
+
+    button.primary-btn {
+      background: var(--primary);
+      color: #FFFFFF;
+      border-color: var(--primary);
+    }
+
+    button.primary-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    button.success-btn {
+      background: var(--success);
+      color: #FFFFFF;
+      border-color: var(--success);
+    }
+
+    /* Sections & Controls */
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .sec-label {
+      color: var(--primary);
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn-row button {
+      font-size: 0.85rem;
+      padding: 7px 12px;
+      min-height: 36px;
+    }
+
+    /* Smile Test Telemetry */
+    #tallyStats {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    #tallyStats b {
+      color: var(--ink);
+    }
+
+    #tallyList {
+      list-style: none;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    #tallyList b {
+      color: var(--ink);
+    }
+
+    .muted {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Test Mode (?test=1) */
+    body.test-mode .dev-control {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Physical AI Companion</h1>
+      <p class="subtitle">Stage 1: Phone Character & Smile Test</p>
+    </header>
+
+    <!-- 1. Living Character Stage -->
+    <div id="stage">
+      <div class="canvas-container" id="canvasContainer" role="button" tabindex="0" aria-label="Physical Companion. Tap to poke, hold to pet.">
+        <canvas id="companionCanvas" width="360" height="360"></canvas>
+      </div>
+      <div id="say" aria-live="polite">Online & listening!</div>
+    </div>
+
+    <!-- 2. "Did that make you smile?" Prompt Card -->
+    <div id="smilePrompt">
+      <span class="prompt-label">Did that make you smile?</span>
+      <div class="prompt-actions">
+        <button class="success-btn" id="smileYesBtn">Yes!</button>
+        <button id="smileNoBtn">Not really</button>
+      </div>
+    </div>
+
+    <!-- 3. Hardware Motion Sensors -->
+    <div class="section-card dev-control">
+      <div class="sec-label">Phone Motion Sensors</div>
+      <button class="primary-btn" id="sensorToggleBtn" style="width: 100%;">
+        Turn on Motion Sensors (Shake & Tilt)
+      </button>
+      <p id="sensorStatus" class="muted" style="font-size: 0.78rem; text-align: center; margin-top: 6px;">
+        Tap above to enable shake & tilt on mobile devices.
+      </p>
+    </div>
+
+    <!-- 4. Reactions Tester (Hidden in ?test=1) -->
+    <div class="section-card dev-control">
+      <div class="sec-label">Reactions & Gestures</div>
+      <div class="btn-row" id="reactionsRow">
+        <button data-act="tap">Poke</button>
+        <button data-act="pet">Pet (Hold)</button>
+        <button data-act="shake">Shake</button>
+        <button data-act="tiltL">Tilt Left</button>
+        <button data-act="tiltR">Tilt Right</button>
+        <button data-act="flip">Flip</button>
+        <button data-act="sleep">Sleep</button>
+        <button data-act="wake">Wake</button>
+        <button id="controlsMorphBtn" style="border-color: #0284C7; color: #0284C7;">Shake-to-Controls</button>
+      </div>
+    </div>
+
+    <!-- 5. Mood Previews (Hidden in ?test=1) -->
+    <div class="section-card dev-control">
+      <div class="sec-label">Preview 10 Core Moods</div>
+      <div class="btn-row" id="moodsRow"></div>
+    </div>
+
+    <!-- 6. Smile Test Telemetry -->
+    <div class="section-card">
+      <div class="sec-label">
+        <span>Smile Test Telemetry</span>
+        <div style="display: flex; gap: 6px;">
+          <button id="exportBtn" style="padding: 4px 10px; font-size: 0.76rem;">Export JSON</button>
+          <button id="resetBtn" style="padding: 4px 8px; font-size: 0.76rem;">Reset</button>
+        </div>
+      </div>
+      <div id="tallyStats"><b>Total Smiles:</b> 0 of 0 (0%)</div>
+      <ul id="tallyList">
+        <li class="muted">No test answers yet. Poke, pet or shake to begin!</li>
+      </ul>
+    </div>
+  </main>
+
+  <!-- ES Modules Setup -->
+  <script type="module">
+    import { MOODS } from './moods.js';
+    import { CompanionCharacter } from './character.js';
+    import { ReactionEngine } from './reactions.js';
+    import { SensorManager } from './sensors.js';
+    import { SmileTestManager } from './smiletest.js';
+
+    // 1. Check for ?test=1 Query Param
+    if (SmileTestManager.isTestMode()) {
+      document.body.classList.add('test-mode');
+    }
+
+    // 2. Initialize Canvas & Character Engine
+    const canvas = document.getElementById('companionCanvas');
+    const sayEl = document.getElementById('say');
+    const character = new CompanionCharacter(canvas);
+
+    // 3. Initialize Smile Test Manager
+    const smileTest = new SmileTestManager({
+      promptEl: document.getElementById('smilePrompt'),
+      tallyListEl: document.getElementById('tallyList'),
+      statsHeaderEl: document.getElementById('tallyStats'),
+      exportBtn: document.getElementById('exportBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      onFeedback: (smiled) => {
+        character.setMood(smiled ? 'happy' : 'neutral');
+        sayEl.textContent = smiled ? 'yay! ✨' : 'noted! 👍';
+      },
+    });
+
+    // 4. Initialize Reaction Engine
+    const reactions = new ReactionEngine(
+      character,
+      (text) => { sayEl.textContent = text || '♪'; },
+      (actionName) => { smileTest.prompt(actionName); },
+      (controlAction) => {
+        console.log(`[Media Controls Stub] Action triggered: ${controlAction}`);
+      }
+    );
+
+    // 5. Initialize Sensor & Touch Interactions
+    const sensorStatusEl = document.getElementById('sensorStatus');
+    const sensors = new SensorManager(
+      canvas,
+      reactions,
+      (statusText) => { sensorStatusEl.textContent = statusText; }
+    );
+
+    document.getElementById('sensorToggleBtn').onclick = () => {
+      sensors.requestMotionPermissions();
+    };
+
+    // 6. Wire Developer Buttons
+    document.getElementById('reactionsRow').addEventListener('click', (e) => {
+      const act = e.target.dataset.act;
+      if (act) reactions.run(act);
+    });
+
+    document.getElementById('controlsMorphBtn').onclick = () => {
+      reactions.triggerControlsMorph();
+    };
+
+    // 7. Populate 10 Mood Buttons
+    const moodsRow = document.getElementById('moodsRow');
+    Object.keys(MOODS).forEach((moodKey) => {
+      const btn = document.createElement('button');
+      btn.textContent = moodKey;
+      btn.onclick = () => {
+        reactions.token++;
+        reactions.isSleeping = (moodKey === 'sleepy');
+        reactions.lastActionTime = Date.now();
+        character.setMood(moodKey);
+        sayEl.textContent = moodKey;
+        smileTest.dismiss();
+      };
+      moodsRow.appendChild(btn);
+    });
+
+    // 8. Register Service Worker for Offline PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.warn('[PWA] Service worker registration failed:', err);
+        });
+      });
+    }
+
+    // Expose companionApp globally for debugging and headless capture
+    window.companionApp = { character, reactions, smileTest, sayEl };
+
+    // Query param direct triggers: ?mood=X, ?reaction=Y, ?morph=1, ?prompt=1
+    const urlParams = new URLSearchParams(window.location.search);
+    const reqMood = urlParams.get('mood');
+    const reqReaction = urlParams.get('reaction');
+    const reqMorph = urlParams.get('morph');
+    const reqPrompt = urlParams.get('prompt');
+
+    if (reqMood && MOODS[reqMood]) {
+      character.setMood(reqMood);
+      for (const k in character.tgt) character.cur[k] = character.tgt[k];
+      sayEl.textContent = reqMood;
+    } else if (reqReaction) {
+      reactions.run(reqReaction);
+    } else if (reqMorph === '1') {
+      character.setMorphTarget(1.0);
+      character.cur.morphProgress = 1.0;
+      sayEl.textContent = 'MUSIC CONTROLS';
+    } else if (reqPrompt === '1') {
+      smileTest.prompt('poke');
+    } else {
+      // Initial greeting
+      setTimeout(() => {
+        reactions.run('tap', 'Online & listening!');
+      }, 450);
+    }
+  </script>
+</body>
+</html>
