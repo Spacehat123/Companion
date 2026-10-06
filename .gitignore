@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.venv/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Testing & Linting
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Local Captured Photos & Previews (Keep directory via .gitkeep)
+photos/*.jpg
+photos/*.png
+!photos/.gitkeep
+
+# Model Checkpoints & Large Weights
+*.pt
+*.pth
+*.bin
+*.safetensors
+ai/models/
+
+# Logs
+*.log
+
+# OS & IDE
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~

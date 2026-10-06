@@ -1,0 +1,46 @@
+{
+  "preferences": {
+    "user_name": "Friend",
+    "volume": 80,
+    "theme": "cyan_glow"
+  },
+  "current_song_index": 4,
+  "recent_commands": [
+    {
+      "timestamp": 1791309617.58982,
+      "raw_text": "i'm bored",
+      "intent": "CONVERSATION",
+      "action": "None"
+    },
+    {
+      "timestamp": 1791309611.0544372,
+      "raw_text": "set a timer for 1 minute",
+      "intent": "SET_TIMER",
+      "action": "Timer set for 1m"
+    },
+    {
+      "timestamp": 1791309609.395641,
+      "raw_text": "i'm bored",
+      "intent": "CONVERSATION",
+      "action": "None"
+    },
+    {
+      "timestamp": 1791309605.6803713,
+      "raw_text": "take a picture of me",
+      "intent": "TAKE_PHOTO",
+      "action": "Saved photo to /home/pranc/ai-companion/photos/photo_20261006_233005.jpg"
+    },
+    {
+      "timestamp": 1791309601.9439473,
+      "raw_text": "skip this song",
+      "intent": "NEXT_TRACK",
+      "action": "Skipped to: Get Lucky by Daft Punk ft. Pharrell"
+    },
+    {
+      "timestamp": 1791309362.5445626,
+      "raw_text": "i'm bored",
+      "intent": "CONVERSATION",
+      "action": "None"
+    }
+  ]
+}
