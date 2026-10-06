@@ -65,28 +65,59 @@
 
 ---
 
-## 4. Five-Phase Implementation Roadmap
+## 4. Five-Stage Product Development Roadmap
 
-- [x] **Phase 1: The Living Cube & Morphing Controls** *(COMPLETE & TESTED)*
-  - Standalone 360x360 OLED cube simulator window (frameless, dark mode, floating).
-  - Procedural glowing cyan/mint eyes with damped spring gaze tracking, realistic blinks, saccades, and breathing.
-  - Shake detection (mouse shake / 'S' key / spacebar) morphing the character into the 3-button control UI:
-    - Left Hand = `⏮ Previous`
-    - Belly = `⏯ Play / Pause`
-    - Right Hand = `⏭ Next`
-  - Squish hover/click animations, action logging, and auto-return to face mode.
-- [x] **Phase 2: Live Perception (Webcam Gaze & Audio Beat)** *(COMPLETE & TESTED)*
-  - OpenCV YuNet DNN neural face detector running in background thread; character eyes physically follow user's real face in 3D space.
-  - Real-time audio FFT & RMS energy / beat onset detection; character head-bobs and pulses to music rhythm.
-- [x] **Phase 3: Phone Event Console & Emotive Reactions** *(COMPLETE & TESTED)*
-  - Dev Phone Simulator panel to trigger mock WhatsApp messages, incoming calls, timers, battery alerts, and Spotify state.
-  - Expressive character animations & procedural audio SFX (Wall-E / R2-D2 style rising chirps, alert pings, clicks, whimpers).
-- [x] **Phase 4: Tamagotchi Life State Engine** *(COMPLETE & TESTED)*
-  - Persistent memory tracking attachment level (Stranger -> Soulmate), energy, boredom, and dynamic moods.
-  - Saves locally to `data/life_state.json`; evolves dynamically across user interactions.
-- [x] **Phase 5: SmolLM2-360M Subconscious Brain** *(COMPLETE & TESTED)*
-  - Async background reasoning engine generating inner thoughts and contextual micro-actions every 18s or on events.
-  - Press `[I]` on the cube to inspect the real-time AI Thought and Companion Status HUD.
+```mermaid
+flowchart TD
+    S1["Stage 1: Phone Character\n(Animations, Moods, Shake/Tilt, Smile Test)"] --> S2["Stage 2: Intent Layer\n(End-to-End 6-Intent + Banter Fallback)"]
+    S2 --> S3["Stage 3: Hardware Prototype\n(ESP32-S3, Display, Mic, IMU, Real Power Profiling)"]
+    S3 --> S4["Stage 4: Camera Behavior\n(On-Device Detection, Wake-on-Motion, Privacy LED)"]
+    S4 --> S5["Stage 5: Battery & Shell Design\n(Current-Sized Cell, Modular Snap-On Pack, 3D Shell)"]
+```
+
+### Stage 1: Phone Character (The "Smile Test" & Emotional Core)
+- **Goal**: Validate that the character generates genuine, spontaneous user delight (*"The Smile Test"*) before manufacturing hardware.
+- **Key Modules**:
+  - Full procedural vector character (eyes, mouth, waving hands, tapping feet, chassis glow).
+  - Mood & temperament model (joy, boredom, cheekiness, sleepy, startled, annoyed).
+  - Simulated physical dynamics: phone shake (controls morph), tilt/gyroscope parallax, and idle curiosity.
+  - "Smile Test" benchmark: Put prototype in front of 5–10 real people. If they do not smile within 10 seconds of interaction, refine animation timing and charm before moving to physical manufacturing.
+
+### Stage 2: Intent Layer (Deterministic + Banter Fallback)
+- **Goal**: Zero user confusion; snappy (<50ms) action execution; 0% robotic error rates.
+- **Key Modules**:
+  - 6-Intent Classifier: `NEXT_TRACK`, `PREVIOUS_TRACK`, `TAKE_PHOTO`, `SET_TIMER`, `CONVERSATION`, `UNKNOWN` (internal safety code only).
+  - **Zero "UNKNOWN" rule**: The user is NEVER shown an error message or "unknown" prompt. Unmapped queries route directly to personality banter and playful deflections.
+  - End-to-end integration: Audio mic stream -> ASR / keyword intent -> hardware action -> expressive feedback.
+  - Dataset hardening: 315+ structured semantic state samples with ASR homophone noise and duration parameter extraction.
+
+### Stage 3: Hardware Prototype (ESP32-S3 & Real Power Profiling)
+- **Goal**: Build physical breadboard/devkit prototype and empirically measure real milliamp (mA) current draw.
+- **Key Modules**:
+  - Dev Board: **ESP32-S3-WROOM-1 / ESP32-S3-Korvo-2** (Dual-core Xtensa LX7 @ 240MHz, 8MB PSRAM, Wi-Fi 4 + BLE 5.0).
+  - Display: 1.28" or 1.54" round/square SPI display (GC9A01 / ST7789, 240x240 RGB).
+  - Microphone: I2S digital MEMS microphone (INMP441 / MSM261D).
+  - Accelerometer / IMU: 6-axis I2C sensor (MPU6050 / LSM6DS3) with hardware interrupt pin.
+  - **Empirical Power Profiling**: Measure actual current draw with Nordic Power Profiler / multimeter across 3 states:
+    1. *Deep Sleep / Motion Wake*: Target < 50 µA.
+    2. *Ambient Idle / Glance*: Target ~20–35 mA (low CPU clock, dimmed screen).
+    3. *Active Perception (Camera + Audio + Wi-Fi)*: Target ~180–280 mA.
+  - Real battery sizing: Determine required mAh based on measured duty cycle (e.g. 16h waking day vs. 3-day standby).
+
+### Stage 4: Camera Behavior (Privacy, Vision & Wake)
+- **Goal**: Socially acceptable ambient camera with zero privacy paranoia and instant motion wake.
+- **Key Modules**:
+  - Camera Sensor: OV2640 / OV5640 DVP camera module.
+  - Edge Inference: ESP-WHO / ESP-NN quantized face detection on-device; raw video never leaves the device.
+  - Wake-on-Motion: Accelerometer tap/motion interrupt wakes ESP32 from deep sleep in < 250ms.
+  - **Physical Privacy LED**: Hardware indicator LED wired directly in series with the camera sensor power / VSYNC line so users and bystanders have physical, unhackable verification of when the sensor is active.
+
+### Stage 5: Battery & Shell Design (Industrial Design & Snap-On Pack)
+- **Goal**: A pocketable, durable, lovable keychain cube with modular power.
+- **Key Modules**:
+  - Cell Sizing: Select high-density LiPo / LiFePO4 cell sized precisely to the Stage 3 power measurements.
+  - Modular Snap-On Pack: Magnetic pogo-pin battery backpack allowing the core companion to stay ultra-lightweight on keys while snapping onto a larger desk dock or battery pack.
+  - 3D CAD Shell: Injection-molding / SLA resin casing with matte soft-touch finish, screen lens bezel, mic acoustic port, camera aperture, and reinforced metal lanyard/keychain eyelet.
 
 ## 5. Completed MVP Demonstration Architecture
 
