@@ -1,11 +1,11 @@
 /**
- * web/moods.js — Mood Definitions, BASE State & Tuning Constants for Kitsune Companion.
- * 
- * Defines the 10 core moods mapped to fox ears, multi-segment tail, eyes,
- * glowing forehead spirit crest, and floating wisps.
+ * web/moods.js — Mood Definitions, BASE State & Centralized Tuning Constants.
+ * Stage 1 Shippable v0.1.0 for Kitsune Companion.
  */
 
 export const CONSTANTS = {
+  appVersion: 'v0.1.0',
+
   // Spring Physics Tuning (Stiffness & Damping)
   bodySpring: 13.0,       // Torso spring speed
   eyeSpring: 16.0,        // Eye and gaze spring speed
@@ -13,15 +13,27 @@ export const CONSTANTS = {
   tailSpring: 11.0,       // Tail spring follow-through speed
   blinkSpeed: 38.0,       // Blink close/open speed
   
-  // Timing
-  idleMicroMin: 3500,     // Min ms between autonomous micro-behaviors (3.5s)
-  idleMicroMax: 7000,     // Max ms between autonomous micro-behaviors (7.0s)
-  idleSleepTimeout: 30000,// Inactivity time before falling asleep (30s)
+  // Timing & Life Engine
+  idleMicroMin: 3200,     // Min ms between autonomous micro-behaviors (3.2s)
+  idleMicroMax: 6500,     // Max ms between autonomous micro-behaviors (6.5s)
+  idleSleepTimeout: 48000,// Inactivity time before falling asleep (~48s)
   petHoldThreshold: 450,  // Milliseconds of hold to trigger 'pet' instead of 'poke'
   strokeThreshold: 18,    // Pointer movement distance during hold to trigger stroke pet
-  flickVelocityThreshold: 1.2, // Pointer drag release velocity to trigger fling/flick
-  shakeThreshold: 14.0,   // Motion delta threshold (m/s^2) for shake detection
+  flickVelocityThreshold: 1.15, // Pointer drag release velocity to trigger fling/flick
   controlsTimeout: 4200,  // Duration in ms that shake-to-controls stays open
+
+  // Sensor Tuning (Empirically verified thresholds)
+  shakeThreshold: 9.5,    // Delta from gravity (m/s^2) for casual hand shake
+  shakeWindowMs: 650,     // Rolling window for direction reversals
+  shakeReversalsNeeded: 3,// Direction reversals needed to reject footsteps / walking
+  shakeCooldown: 3200,    // Cooldown ms after shake triggers
+  
+  tiltDeadzoneDeg: 16.0,  // Degrees deadzone before tilt activates
+  tiltThresholdDeg: 28.0, // Degrees roll to trigger sustained tilt reaction
+  tiltHoldMs: 500,        // Milliseconds tilt must be held to fire reaction
+  
+  flipThresholdDeg: 138.0,// Pitch degrees indicating true upside-down
+  flipHoldMs: 400,        // Milliseconds upside-down must be held
   
   // Blink intervals
   blinkIntervalMin: 1800,

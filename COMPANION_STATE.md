@@ -75,16 +75,20 @@ flowchart TD
     S4 --> S5["Stage 5: Battery & Shell Design\n(Current-Sized Cell, Modular Snap-On Pack, 3D Shell)"]
 ```
 
-### Stage 1: Phone Character (The "Smile Test" & Emotional Core) — *(COMPLETE - KITSUNE FOX SPIRIT CUB WEB PWA)*
+### Stage 1: Phone Character (The "Smile Test" & Emotional Core) — *(SHIPPABLE v0.1.0 COMPLETED)*
 - **Goal**: Validate that the creature generates genuine, spontaneous user delight (*"The Smile Test"*) before manufacturing hardware.
-- **Status**: **Fully built and running as a zero-dependency, full-bleed mobile PWA in `web/`**:
+- **Status**: **Fully verified, headless QA tested (100% pass), and live on GitHub Pages**:
   - `web/species/fox.js`: Modular species architecture isolating creature rendering. Features a mythic fox-spirit cub (kitsune) with warm orange/cream palette, independently driven ears (perked, flat, droopy, one-up-one-down), 5-segment spring-chain tail with follow-through lag (wag, puff, curl, swish), glowing kitsune forehead crest, sparkling tail tip, ambient orbiting spirit wisps (*kitsune-bi*), and pure Canvas vector emotes (`!`, `?`, `♥`, `♪`, `✨`, `💤`).
-  - `web/character.js`: 60 FPS HTML5 Canvas 2D engine coordinating second-order spring physics, eye saccades/blinks, modular species rendering, and the 3-zone Shake-to-Controls morph layout (`⏮`, `⏯`, `⏭`).
-  - `web/reactions.js`: Cancel-token async step runner, direct touch gestures (body poke, ear tap, tail tap, pet hold, stroke drag, flick fling), autonomous life micro-behaviors (look around, yawn, stretch, chase tail, sneeze wisp, ear twitch), 30s sleep watchdog, and dynamic wake (grumpy vs happy).
-  - `web/sensors.js`: Direct touch hit-testing, drag/stroke detection, quick flick velocity detection, hardware `devicemotion` shake & `deviceorientation` tilt/flip, desktop keyboard shortcuts (`S`, `F`, `L`, `R`, `Z`), and a single-tap friendly motion permission unlock screen.
-  - `web/smiletest.js`: Unobtrusive bottom strip prompt appearing 2.2s after interactions and auto-fading after 7s, persistent `localStorage` tally, time-to-first-smile stopwatch, JSON telemetry export, and clean URL modes (`?dev=1` for dev tools, default and `?test=1` for pure creature).
-  - `web/sw.js`: PWA Service Worker (v2) caching all assets for offline execution.
-  - `web/screenshots/`: Automated headless browser verification captures of all 10 moods and key gestures/reactions.
+  - `web/character.js`: 60 FPS / 30 FPS dynamic animation engine with visibilitychange pause (zero background battery drain), capped devicePixelRatio (2.0 max), HiDPI buffer, second-order spring physics, and the 3-zone Shake-to-Controls morph layout (`⏮`, `⏯`, `⏭`).
+  - `web/reactions.js`: Cancel-token async step runner, direct touch gestures (body poke, ear tap, tail tap, pet hold, stroke drag, flick fling), autonomous life micro-behaviors (look around, yawn, stretch, chase tail, sneeze wisp, ear twitch), 48s sleep watchdog, session persistence (excited reunion after hours, sulky greeting after days, pet forgiveness), and dynamic wake.
+  - `web/sensors.js`: Direct touch hit-testing, drag/stroke detection, quick flick velocity detection, hardware `devicemotion` shake (with rolling-window direction reversals filter to reject footsteps) & `deviceorientation` sustained tilt/flip, desktop keyboard shortcuts (`S`, `F`, `L`, `R`, `Z`), first-visit hint dismissal, and a single-tap friendly motion permission unlock screen.
+  - `web/smiletest.js`: Unobtrusive bottom strip prompt appearing 2.2s after interactions and auto-fading after 6.5s, persistent `localStorage` telemetry (anonymous tester ID, device categorization, active play stopwatch, time-to-first-smile stopwatch, per-reaction counts), triple-tap top-right hot corner export, and "Send results" mailto generator.
+  - `web/sw.js`: PWA Service Worker (v0.1.0) with network-first strategy for code (instant updates without stale builds) and cache fallback offline.
+  - `web/qa_suite.py` & `web/qa_report.json`: Automated CDP headless test suite verifying 100% test passes, 0 console errors, 0 uncaught exceptions, and 60 FPS throttled execution.
+- **Known Limitations (Stage 1 Scope)**:
+  1. *iOS Motion Permission*: Mobile Safari strictly requires user gesture to grant accelerometer access (handled via first-visit tap-to-awaken overlay, never shown again).
+  2. *Ambient Light API*: Screen darkness reaction is simulated via viewport activity rather than W3C Generic Sensor API (unsupported in iOS Safari).
+  3. *Audio/Voice*: Zero voice, SLM, or sound synthesizers are included in Stage 1 by design.
 
 ### Stage 2: Intent Layer (Deterministic + Banter Fallback)
 - **Goal**: Zero user confusion; snappy (<50ms) action execution; 0% robotic error rates.

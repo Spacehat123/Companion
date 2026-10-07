@@ -1,0 +1,178 @@
+{
+  "timestamp": "2026-10-07 22:44:08",
+  "version": "v0.1.0",
+  "tests": [
+    {
+      "name": "Initial Page Load",
+      "status": "PASS",
+      "details": {
+        "exists": true,
+        "w": 360
+      }
+    },
+    {
+      "name": "Touch Hint Present",
+      "status": "PASS"
+    },
+    {
+      "name": "Gesture: Poke Tap",
+      "status": "PASS"
+    },
+    {
+      "name": "Gesture: Ear Tap",
+      "status": "PASS",
+      "details": {
+        "lRot": 0,
+        "emote": null
+      }
+    },
+    {
+      "name": "Gesture: Tail Tap",
+      "status": "PASS",
+      "details": {
+        "tailAngle": 0,
+        "tailPuff": false
+      }
+    },
+    {
+      "name": "Gesture: Hold Pet",
+      "status": "PASS",
+      "details": {
+        "mood": "neutral",
+        "heartEyes": "capsule"
+      }
+    },
+    {
+      "name": "Gesture: Stroke Drag",
+      "status": "PASS"
+    },
+    {
+      "name": "Gesture: Quick Flick",
+      "status": "PASS",
+      "details": {
+        "mood": "neutral",
+        "tilt": 0
+      }
+    },
+    {
+      "name": "Shortcut Key 's'",
+      "status": "PASS",
+      "reaction": "shake"
+    },
+    {
+      "name": "Shortcut Key 'f'",
+      "status": "PASS",
+      "reaction": "flip"
+    },
+    {
+      "name": "Shortcut Key 'l'",
+      "status": "PASS",
+      "reaction": "tiltL"
+    },
+    {
+      "name": "Shortcut Key 'r'",
+      "status": "PASS",
+      "reaction": "tiltR"
+    },
+    {
+      "name": "Shortcut Key 'z'",
+      "status": "PASS",
+      "reaction": "sleep"
+    },
+    {
+      "name": "Micro-behavior: Sneeze Wisp",
+      "status": "PASS"
+    },
+    {
+      "name": "Micro-behavior: Chase Tail",
+      "status": "PASS"
+    },
+    {
+      "name": "Sleep Sequence",
+      "status": "PASS"
+    },
+    {
+      "name": "Persistence: 4h Excited Reunion",
+      "status": "PASS"
+    },
+    {
+      "name": "Persistence: 30h Sulky Greeting",
+      "status": "PASS"
+    },
+    {
+      "name": "Persistence: Pet Forgiveness",
+      "status": "PASS"
+    },
+    {
+      "name": "Smile Test Telemetry Tracking",
+      "status": "PASS",
+      "payload": {
+        "version": "v0.1.0",
+        "testerId": "fox_q59eeih",
+        "device": "Linux Desktop",
+        "sessionStartTime": "2026-10-07T17:14:42.865Z",
+        "activePlayTimeSec": 4,
+        "timeToFirstSmileSec": 4.5,
+        "totalInteractions": 8,
+        "totalRated": 1,
+        "totalSmiled": 1,
+        "smileRate": "100.0%",
+        "reactions": {
+          "tap": {
+            "count": 1,
+            "yes": 0,
+            "no": 0
+          },
+          "tapEar": {
+            "count": 1,
+            "yes": 0,
+            "no": 0
+          },
+          "tapTail": {
+            "count": 1,
+            "yes": 0,
+            "no": 0
+          },
+          "pet": {
+            "count": 1,
+            "yes": 0,
+            "no": 0
+          },
+          "stroke": {
+            "count": 1,
+            "yes": 0,
+            "no": 0
+          },
+          "flick": {
+            "count": 1,
+            "yes": 0,
+            "no": 0
+          },
+          "wakeHappy": {
+            "count": 1,
+            "yes": 0,
+            "no": 0
+          },
+          "forgive": {
+            "count": 1,
+            "yes": 1,
+            "no": 0
+          }
+        },
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "name": "Zero Console Errors Check",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "perf": {
+    "throttledActiveFPS": 60,
+    "throttledIdleFPS": 60,
+    "dpr": 1,
+    "wispsCount": 4,
+    "tailSegments": 5
+  }
+}

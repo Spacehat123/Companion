@@ -1,17 +1,14 @@
 /**
- * web/sensors.js — Hardware Device Sensors & Touch/Pointer Interaction Manager.
+ * web/sensors.js — Hardware Device Sensors & Direct Touch Interaction Manager.
+ * Stage 1 Shippable v0.1.0
  * 
  * Implements:
- * - Real DeviceMotionEvent shake detection with acceleration delta threshold
- * - DeviceOrientationEvent tilt (left/right tilt & flip)
- * - Single friendly tap-to-start motion permission unlock (persisted to localStorage)
- * - Direct touch gestures on creature:
- *   - Tap: body poke, ear tap, or tail tap based on hit zone!
- *   - Hold: pet reaction (purrs, leans in, heart eyes)
- *   - Slow stroke / drag: dynamic petting that deepens with movement
- *   - Quick flick: fling across screen & dizzy bounce back
- * - Eye gaze tracking following pointer / touch
- * - Desktop keyboard controls: S (shake), F (flip), L/R (tilt), Z (sleep)
+ * - Empirically verified shake detection with rolling window and direction reversals (rejects footsteps)
+ * - Sustained tilt detection (500ms hold with deadzone)
+ * - Sustained flip detection (400ms hold for true upside-down)
+ * - Direct touch gestures on creature (ear tap, tail tap, body poke, hold pet, stroke, flick)
+ * - Touch hint dismissal
+ * - Desktop keyboard testing shortcuts (S, F, L, R, Z, Space, P)
  */
 
 import { CONSTANTS } from './moods.js';
@@ -27,7 +24,15 @@ export class SensorManager {
     this.shakeCooldown = 0;
     this.tiltCooldown = 0;
 
-    // Gesture tracking state
+    // Rolling window history for shake direction reversals
+    this.shakeHistory = [];
+
+    // Sustained hold timers for tilt & flip
+    this.tiltStartTime = 0;
+    this.tiltDir = null;
+    this.flipStartTime = 0;
+
+    // Direct touch gesture tracking state
     this.pointerDown = false;
     this.pointerStart = { x: 0, y: 0, time: 0 };
     this.pointerLast = { x: 0, y: 0, time: 0, vx: 0, vy: 0 };
@@ -44,7 +49,6 @@ export class SensorManager {
 
   async requestMotionPermissions() {
     try {
-      // iOS 13+ requires explicit permission request
       if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
         const motionPerm = await DeviceMotionEvent.requestPermission();
         if (motionPerm !== 'granted') {
@@ -64,28 +68,27 @@ export class SensorManager {
       this._enableListeners();
       this.sensorsActive = true;
       localStorage.setItem('companion_motion_unlocked', '1');
-      this.updateStatus('Motion Active (Shake / Tilt phone)');
+      this.updateStatus('Sensors Active (Shake / Tilt phone)');
       return true;
     } catch (err) {
       console.warn('[SensorManager] Sensor activation:', err);
-      this.updateStatus('Desktop / Sensors unavailable');
+      this.updateStatus('Desktop / Touch mode active');
       return false;
     }
   }
 
   autoUnlockIfGranted() {
-    // If previously granted, automatically enable listeners
     if (localStorage.getItem('companion_motion_unlocked') === '1') {
       this._enableListeners();
       this.sensorsActive = true;
-      this.updateStatus('Motion Active');
+      this.updateStatus('Sensors Active');
       return true;
     }
     return false;
   }
 
   _enableListeners() {
-    // 1. Shake Detection via devicemotion
+    // 1. Shake Detection: Rolling window & direction reversals check
     window.addEventListener('devicemotion', (e) => {
       const acc = e.accelerationIncludingGravity || e.acceleration;
       if (!acc) return;
@@ -94,48 +97,80 @@ export class SensorManager {
       const now = Date.now();
       const delta = Math.abs(mag - 9.8);
 
-      // Subtle carrying bounce
-      if (delta > 1.8 && delta < 6.0 && !this.engine.isSleeping && !this.engine.currentActionName) {
-        this.char.tgt.bodyOffsetY = Math.sin(now * 0.01) * 3;
+      // Record reading in rolling window
+      const val = acc.x || acc.y || delta;
+      this.shakeHistory.push({ time: now, val });
+      this.shakeHistory = this.shakeHistory.filter(p => now - p.time < CONSTANTS.shakeWindowMs);
+
+      // Count direction reversals in rolling window
+      let reversals = 0;
+      for (let i = 2; i < this.shakeHistory.length; i++) {
+        const d1 = this.shakeHistory[i - 1].val - this.shakeHistory[i - 2].val;
+        const d2 = this.shakeHistory[i].val - this.shakeHistory[i - 1].val;
+        if ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) {
+          reversals++;
+        }
       }
 
-      // Deliberate Shake
-      if (delta > CONSTANTS.shakeThreshold && now > this.shakeCooldown) {
-        this.shakeCooldown = now + 3200;
+      // Subtle carrying bounce when walking
+      if (delta > 1.8 && delta < 5.5 && reversals < CONSTANTS.shakeReversalsNeeded && !this.engine.isSleeping && !this.engine.currentActionName) {
+        this.char.tgt.bodyOffsetY = Math.sin(now * 0.01) * 2.5;
+      }
+
+      // Deliberate casual hand shake trigger
+      if (delta > CONSTANTS.shakeThreshold && reversals >= CONSTANTS.shakeReversalsNeeded && now > this.shakeCooldown) {
+        this.shakeCooldown = now + CONSTANTS.shakeCooldown;
+        this.shakeHistory = [];
         this.engine.run('shake');
       }
     });
 
-    // 2. Tilt & Flip Detection via deviceorientation
+    // 2. Tilt & Flip Detection: Deadzone & Sustained hold checks
     window.addEventListener('deviceorientation', (e) => {
       if (this.engine.isSleeping || this.engine.isControlsMode) return;
       const gamma = e.gamma || 0; // Roll: Left (-90) to Right (+90)
-      const beta = e.beta || 0;   // Pitch: Flat (0) to Vertical (90) to Upside Down (180/-180)
+      const beta = e.beta || 0;   // Pitch: Vertical (90) to Upside Down (180/-180)
       const now = Date.now();
 
-      // Flip (Upside Down Detection)
-      if (Math.abs(beta) > 138 && now > this.tiltCooldown) {
-        this.tiltCooldown = now + 4000;
-        this.engine.run('flip');
-        return;
+      // True Upside-Down Flip (sustained 400ms hold)
+      if (Math.abs(beta) > CONSTANTS.flipThresholdDeg) {
+        if (!this.flipStartTime) {
+          this.flipStartTime = now;
+        } else if (now - this.flipStartTime >= CONSTANTS.flipHoldMs && now > this.tiltCooldown) {
+          this.tiltCooldown = now + 3500;
+          this.flipStartTime = 0;
+          this.engine.run('flip');
+          return;
+        }
+      } else {
+        this.flipStartTime = 0;
       }
 
-      // Strong Tilt Threshold Triggers
-      if (gamma < -28 && now > this.tiltCooldown) {
-        this.tiltCooldown = now + 2500;
-        this.engine.run('tiltL');
-        return;
-      } else if (gamma > 28 && now > this.tiltCooldown) {
-        this.tiltCooldown = now + 2500;
-        this.engine.run('tiltR');
-        return;
+      // Sustained Tilt (500ms hold with deadzone)
+      if (Math.abs(gamma) > CONSTANTS.tiltThresholdDeg) {
+        const dir = gamma > 0 ? 'tiltR' : 'tiltL';
+        if (this.tiltDir !== dir) {
+          this.tiltDir = dir;
+          this.tiltStartTime = now;
+        } else if (now - this.tiltStartTime >= CONSTANTS.tiltHoldMs && now > this.tiltCooldown) {
+          this.tiltCooldown = now + 2500;
+          this.tiltStartTime = 0;
+          this.tiltDir = null;
+          this.engine.run(dir);
+          return;
+        }
+      } else {
+        this.tiltStartTime = 0;
+        this.tiltDir = null;
       }
 
-      // Smooth Ambient Gaze & Lean when idle
+      // Smooth Ambient Gaze & Lean when held within gentle angle
       if (!this.engine.currentActionName || this.engine.currentActionName === 'neutral') {
-        const leanFactor = Math.max(-1.0, Math.min(1.0, gamma / 35.0));
-        this.char.tgt.bodyTilt = leanFactor * 8.0;
-        this.char.tgt.eyeGazeX = leanFactor * 0.6;
+        if (Math.abs(gamma) > CONSTANTS.tiltDeadzoneDeg) {
+          const leanFactor = Math.max(-1.0, Math.min(1.0, (gamma) / 38.0));
+          this.char.tgt.bodyTilt = leanFactor * 8.0;
+          this.char.tgt.eyeGazeX = leanFactor * 0.6;
+        }
       }
     });
   }
@@ -153,6 +188,14 @@ export class SensorManager {
       this.pointerLast = { x: e.clientX, y: e.clientY, time: now, vx: 0, vy: 0 };
       this.isHeld = false;
       this.isStroking = false;
+      this.char.isInteracting = true;
+
+      // Dismiss first-interaction visual hint if present
+      const hint = document.getElementById('touchHint');
+      if (hint && !hint.classList.contains('dismissed')) {
+        hint.classList.add('dismissed');
+        localStorage.setItem('companion_hint_dismissed', '1');
+      }
 
       // Check Hit Information
       const hit = this.char.getHitInfo(e.clientX, e.clientY);
@@ -199,7 +242,6 @@ export class SensorManager {
 
         const totalDist = Math.hypot(e.clientX - this.pointerStart.x, e.clientY - this.pointerStart.y);
 
-        // If moved more than threshold, it's a drag/stroke or flick gesture
         if (totalDist > CONSTANTS.strokeThreshold) {
           clearTimeout(this.holdTimer);
           this.isStroking = true;
@@ -207,7 +249,7 @@ export class SensorManager {
         }
       }
 
-      // Gaze Tracking follows pointer when not sleeping
+      // Gaze Tracking follows pointer
       if (!this.engine.isSleeping && this.char.activeMood === 'neutral') {
         const rect = canvas.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
@@ -222,6 +264,7 @@ export class SensorManager {
     const finishPointer = (e) => {
       if (!this.pointerDown) return;
       this.pointerDown = false;
+      this.char.isInteracting = false;
       clearTimeout(this.holdTimer);
 
       if (this.engine.isControlsMode) return;
@@ -249,8 +292,7 @@ export class SensorManager {
       }
 
       // 4. Tap: Short click with minimal movement
-      if (duration < 400 && totalDist < 20) {
-        // Direct touch differentiation based on hit anatomy!
+      if (duration < 420 && totalDist < 22) {
         if (this.hitZone === 'earL' || this.hitZone === 'earR') {
           this.engine.run('tapEar');
         } else if (this.hitZone === 'tail') {
@@ -292,7 +334,7 @@ export class SensorManager {
         this.engine.run('tiltR');
       } else if (key === 'z') {
         e.preventDefault();
-        this.engine.run(this.engine.isSleeping ? 'wake' : 'sleep');
+        this.engine.run(this.engine.isSleeping ? 'wakeHappy' : 'sleep');
       } else if (key === ' ' || key === 'enter') {
         e.preventDefault();
         this.engine.run('tap');
