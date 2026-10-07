@@ -1,14 +1,6 @@
 /**
  * web/reactions.js — Async Reaction Step Sequences, Autonomous Life,
- * and Gestures for Kitsune Companion.
- * 
- * Non-verbal: Uses Canvas vector emotes instead of speech text.
- * Implements:
- * - Direct touch gestures: Tap (body, ear, tail), Pet (hold), Stroke (drag), Flick (quick swipe)
- * - Autonomous micro-behaviors (look around, yawn, stretch, chase tail, sneeze wisp, ear twitch)
- * - Inactivity sleep watchdog (30s) and dynamic wake (grumpy vs happy)
- * - Cancel tokens (new interactions immediately interrupt active ones)
- * - Shake-to-Controls 3-Zone morph
+ * and Persistence Engine for Kitsune Companion (Stage 1 Shippable v0.1.0).
  */
 
 import { CONSTANTS, MOODS } from './moods.js';
@@ -21,6 +13,7 @@ export class ReactionEngine {
 
     this.token = 0;
     this.isSleeping = false;
+    this.isSulky = false;
     this.lastActionTime = Date.now();
     this.currentActionName = null;
     this.lastMoodBeforeSleep = 'neutral';
@@ -33,15 +26,58 @@ export class ReactionEngine {
     // Stroke petting state
     this.strokeLevel = 0;
 
+    // Track autonomous behavior count in session
+    this.autonomousCount = 0;
+
+    // Initialize Persistence and Greeting
+    this._initPersistence();
+
     // Start autonomous life schedulers
     this._startIdleTimers();
+  }
+
+  _initPersistence() {
+    const STORAGE_KEY = 'companion_last_seen_ts';
+    const lastSeenStr = localStorage.getItem(STORAGE_KEY);
+
+    // Heartbeat updates timestamp while active (every 4s)
+    const heartbeat = () => {
+      if (!document.hidden) {
+        localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      }
+    };
+    setInterval(heartbeat, 4000);
+
+    // Initial greeting based on time elapsed
+    setTimeout(() => {
+      // Record current session after reading previous
+      localStorage.setItem(STORAGE_KEY, Date.now().toString());
+
+      if (!lastSeenStr) {
+        // First visit: normal wake up stretch
+        this.run('wakeHappy');
+      } else {
+        const elapsedHours = (Date.now() - parseInt(lastSeenStr, 10)) / (1000 * 60 * 60);
+        if (elapsedHours > 24.0) {
+          // Gone for over a day: Sulky greeting!
+          this.isSulky = true;
+          this.run('greetSulky');
+        } else if (elapsedHours > 2.0) {
+          // Gone for a few hours: Excited reunion greeting!
+          this.run('greetExcited');
+        } else {
+          // Recent return: gentle morning wake
+          this.run('wakeHappy');
+        }
+      }
+    }, 350);
   }
 
   sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async run(name, customArgs = null) {
+  async run(name) {
     const myToken = ++this.token;
     this.lastActionTime = Date.now();
     this.currentActionName = name;
@@ -59,6 +95,16 @@ export class ReactionEngine {
     if (name === 'sleep') {
       this.isSleeping = true;
       this.lastMoodBeforeSleep = this.char.activeMood;
+    }
+
+    // If sulky and user gives a pet or stroke, trigger forgiveness!
+    if (this.isSulky && (name === 'pet' || name === 'stroke')) {
+      this.isSulky = false;
+      await this._executeStepSequence(myToken, this.SEQUENCES.forgive);
+      if (myToken !== this.token) return;
+      this.char.setMood('happy');
+      this.promptSmile('forgive');
+      return;
     }
 
     const sequence = this.SEQUENCES[name];
@@ -82,10 +128,24 @@ export class ReactionEngine {
       return;
     }
 
+    // If still sulky, stay in sulky pout until stroked/petted
+    if (this.isSulky) {
+      this.char.applyPose({
+        earLRot: 40,
+        earRRot: -40,
+        earLFold: 0.65,
+        earRFold: 0.65,
+        mouthStyle: 'pout',
+        mouthCurve: -0.3,
+        bodyTilt: -8.0,
+      });
+      return;
+    }
+
     // Return to neutral
     this.char.setMood('neutral');
 
-    // If reaction was 'shake', automatically transition into Shake-to-Controls morph!
+    // If reaction was 'shake', transition into Shake-to-Controls morph!
     if (name === 'shake') {
       await this.triggerControlsMorph();
       return;
@@ -97,21 +157,16 @@ export class ReactionEngine {
 
   async _executeStepSequence(myToken, sequence) {
     for (let i = 0; i < sequence.length; i++) {
-      if (myToken !== this.token) return; // Interrupted by newer interaction
+      if (myToken !== this.token) return;
       const step = sequence[i];
 
-      // 1. Set character mood if specified
       if (step.mood) this.char.setMood(step.mood);
-
-      // 2. Apply body / limb / ear / tail overrides
       if (step.body) this.char.applyPose(step.body);
 
-      // 3. Trigger special animations like sneeze burst
       if (step.triggerSneeze && this.char.species && this.char.species.triggerSneezeWisp) {
         this.char.species.triggerSneezeWisp();
       }
 
-      // 4. Wait for step duration
       await this.sleep(step.ms);
     }
   }
@@ -120,14 +175,18 @@ export class ReactionEngine {
 
   triggerStrokePet(amount = 1) {
     this.lastActionTime = Date.now();
-    this.strokeLevel = Math.min(5, this.strokeLevel + amount);
+    this.strokeLevel = Math.min(6, this.strokeLevel + amount);
 
     if (this.isSleeping) {
-      this.run('wake');
+      this.run('wakeHappy');
       return;
     }
 
-    // Gentle purring and leaning into finger
+    if (this.isSulky) {
+      this.run('pet');
+      return;
+    }
+
     this.char.applyPose({
       activeEmote: 'heart',
       bodyTilt: 8.0,
@@ -137,7 +196,7 @@ export class ReactionEngine {
       tailWagSpeed: 2.2,
       tailCurl: 28.0,
       blushOpacity: 1.0,
-      foreheadGlow: 1.4,
+      foreheadGlow: 1.45,
       eyeOpenL: 0.65,
       eyeOpenR: 0.65,
       pawWiggle: true,
@@ -150,13 +209,13 @@ export class ReactionEngine {
     }
     this.strokeLevel = 0;
     setTimeout(() => {
-      if (!this.isSleeping && this.currentActionName !== 'pet') {
+      if (!this.isSleeping && this.currentActionName !== 'pet' && !this.isSulky) {
         this.char.setMood('happy');
         setTimeout(() => {
-          if (!this.isSleeping) this.char.setMood('neutral');
+          if (!this.isSleeping && !this.isSulky) this.char.setMood('neutral');
         }, 1200);
       }
-    }, 400);
+    }, 350);
   }
 
   // --- Shake-to-Controls Morph ---
@@ -164,11 +223,8 @@ export class ReactionEngine {
   async triggerControlsMorph() {
     const myToken = ++this.token;
     this.isControlsMode = true;
-    
-    // Smoothly morph to controls layout
     this.char.setMorphTarget(1.0);
 
-    // Auto-timeout back to character mode
     clearTimeout(this.controlsTimer);
     this.controlsTimer = setTimeout(async () => {
       if (myToken !== this.token) return;
@@ -188,20 +244,15 @@ export class ReactionEngine {
     if (!this.isControlsMode) return;
     this.lastActionTime = Date.now();
 
-    // Squish button on click
     this.char.triggerButtonPress(zoneName);
-
-    // Call external stub callback
     this.onControlAction(zoneName);
 
-    // Brief happy ear flick on control touch
     this.char.applyPose({
       earLRot: zoneName === 'PREV' ? -22 : 0,
       earRRot: zoneName === 'NEXT' ? 22 : 0,
       activeEmote: 'music',
     });
 
-    // Reset auto-dismiss timer on interaction
     clearTimeout(this.controlsTimer);
     this.controlsTimer = setTimeout(() => {
       this.dismissControlsMorph();
@@ -212,7 +263,7 @@ export class ReactionEngine {
   // --- Autonomous Life & Sleep Watchdog ---
 
   _startIdleTimers() {
-    // 1. Idle Sleep Watchdog (falls asleep after 30s of inactivity)
+    // 1. Idle Sleep Watchdog (sleeps after ~48s of zero input)
     setInterval(() => {
       const now = Date.now();
       if (!this.isSleeping && !this.isControlsMode && (now - this.lastActionTime > CONSTANTS.idleSleepTimeout)) {
@@ -220,11 +271,11 @@ export class ReactionEngine {
       }
     }, 1000);
 
-    // 2. Autonomous Life Micro-Behaviors (every 3.5 - 7.0s)
+    // 2. Autonomous Life Micro-Behaviors (every 3.2 - 6.5s)
     const scheduleNextMicro = () => {
       const delay = CONSTANTS.idleMicroMin + Math.random() * (CONSTANTS.idleMicroMax - CONSTANTS.idleMicroMin);
       setTimeout(async () => {
-        if (!this.isSleeping && !this.isControlsMode && (Date.now() - this.lastActionTime > 3200)) {
+        if (!this.isSleeping && !this.isControlsMode && !this.isSulky && (Date.now() - this.lastActionTime > 3000)) {
           await this._triggerRandomMicroBehavior();
         }
         scheduleNextMicro();
@@ -235,16 +286,16 @@ export class ReactionEngine {
 
   async _triggerRandomMicroBehavior() {
     const microList = ['lookAround', 'yawn', 'stretch', 'chaseTail', 'sneezeWisp', 'earTwitch'];
-    // Filter out last behavior so it never repeats the same one twice
     const available = microList.filter(m => m !== this.lastIdleMicro);
     const chosen = available[Math.floor(Math.random() * available.length)];
     this.lastIdleMicro = chosen;
+    this.autonomousCount++;
 
     const myToken = ++this.token;
     const seq = this.MICRO_BEHAVIORS[chosen];
     if (seq) {
       await this._executeStepSequence(myToken, seq);
-      if (myToken === this.token && !this.isSleeping) {
+      if (myToken === this.token && !this.isSleeping && !this.isSulky) {
         this.char.setMood('neutral');
       }
     }
@@ -253,7 +304,7 @@ export class ReactionEngine {
   // --- Step Sequence Definitions ---
 
   SEQUENCES = {
-    // 1. Poke (Body/Head Tap): Squish down -> Hop up -> Happy ear perk -> Settle
+    // 1. Poke (Body/Head Tap): Squish down -> Hop up -> Happy ear perk
     tap: [
       {
         mood: 'surprised',
@@ -310,7 +361,7 @@ export class ReactionEngine {
       },
     ],
 
-    // 4. Pet (Hold): Leans in, purrs, heart eyes, tail curls in affectionately
+    // 4. Pet (Hold): Leans in, purrs, heart eyes, tail curls in
     pet: [
       {
         mood: 'love',
@@ -324,7 +375,7 @@ export class ReactionEngine {
       },
     ],
 
-    // 5. Flick (Quick Swipe): Fling across screen, dizzy bounce back, shakes it off
+    // 5. Flick: Fling across screen, dizzy bounce back, shakes it off
     flick: [
       {
         mood: 'surprised',
@@ -343,7 +394,7 @@ export class ReactionEngine {
       },
     ],
 
-    // 6. Shake: Frantic flailing ears & tail -> Dizzy -> Annoyed -> Shake-to-Controls
+    // 6. Shake: Wobble -> Dizzy -> Annoyed -> Shake-to-Controls
     shake: [
       {
         mood: 'dizzy',
@@ -362,7 +413,7 @@ export class ReactionEngine {
       },
     ],
 
-    // 7. Tilt Left: Leans left, ears & tail counter-balance
+    // 7. Tilt Left
     tiltL: [
       {
         mood: 'curious',
@@ -371,7 +422,7 @@ export class ReactionEngine {
       },
     ],
 
-    // 8. Tilt Right: Leans right, ears & tail counter-balance
+    // 8. Tilt Right
     tiltR: [
       {
         mood: 'curious',
@@ -380,7 +431,7 @@ export class ReactionEngine {
       },
     ],
 
-    // 9. Flip (Upside Down): Panic ears flat, tail poofed, surprised -> annoyed
+    // 9. Flip: Upside Down
     flip: [
       {
         mood: 'surprised',
@@ -394,7 +445,7 @@ export class ReactionEngine {
       },
     ],
 
-    // 10. Sleep: Yawn, droop ears, curl tail around body, slow breathing, zzz
+    // 10. Sleep: Yawn, droop ears, curl tail around body, zzz
     sleep: [
       {
         mood: 'sleepy',
@@ -408,11 +459,11 @@ export class ReactionEngine {
       },
     ],
 
-    // 11. Wake Happy: Tall joyful morning stretch, perked ears, musical note
+    // 11. Wake Happy
     wakeHappy: [
       {
         mood: 'surprised',
-        ms: 700,
+        ms: 650,
         body: { bodyScaleY: 1.20, bodyScaleX: 0.88, bodyOffsetY: -18, earLRot: -20, earRRot: 20, activeEmote: 'sparkle' },
       },
       {
@@ -422,7 +473,7 @@ export class ReactionEngine {
       },
     ],
 
-    // 12. Wake Grumpy: Flat ears, slow grumble, sleepy annoyed pout
+    // 12. Wake Grumpy
     wakeGrumpy: [
       {
         mood: 'sleepy',
@@ -435,10 +486,51 @@ export class ReactionEngine {
         body: { bodyScaleX: 0.96, earLRot: 50, earRRot: -50, mouthStyle: 'pout', mouthCurve: -0.3 },
       },
     ],
+
+    // 13. Greet Excited (Back after 2 - 24 hours)
+    greetExcited: [
+      {
+        mood: 'excited',
+        ms: 800,
+        body: { bodyOffsetY: -22, bodyScaleY: 1.2, earLRot: -25, earRRot: 25, tailAngle: 30, tailWagSpeed: 5.0, activeEmote: 'sparkle' },
+      },
+      {
+        mood: 'happy',
+        ms: 1200,
+        body: { bodyOffsetY: -6, bodyScaleY: 1.05, tailWagSpeed: 3.5, activeEmote: 'music' },
+      },
+    ],
+
+    // 14. Greet Sulky (Back after > 24 hours)
+    greetSulky: [
+      {
+        mood: 'sad',
+        ms: 900,
+        body: { bodyTilt: -10.0, earLRot: 45, earRRot: -45, earLFold: 0.6, earRFold: 0.6, bodyOffsetY: 8 },
+      },
+      {
+        mood: 'annoyed',
+        ms: 1400,
+        body: { bodyTilt: -12.0, earLRot: 48, earRRot: -48, mouthStyle: 'pout', mouthCurve: -0.35, eyeGazeX: -0.7 },
+      },
+    ],
+
+    // 15. Forgive Sulkiness (Triggered by Petting / Stroking when sulky)
+    forgive: [
+      {
+        mood: 'surprised',
+        ms: 500,
+        body: { bodyScaleY: 1.15, bodyOffsetY: -12, earLRot: -15, earRRot: 15, activeEmote: 'sparkle' },
+      },
+      {
+        mood: 'love',
+        ms: 1600,
+        body: { bodyTilt: 6.0, bodyOffsetY: 0, foreheadGlow: 1.6, pawWiggle: true, activeEmote: 'heart' },
+      },
+    ],
   };
 
   MICRO_BEHAVIORS = {
-    // A. Look Around: Curious head & ear swivels, darting gaze
     lookAround: [
       {
         mood: 'curious',
@@ -451,8 +543,6 @@ export class ReactionEngine {
         body: { bodyTilt: 7.0, eyeGazeX: 0.85, eyeGazeY: 0.1, earLRot: 22, earRRot: -18 },
       },
     ],
-
-    // B. Yawn: Sleepy mouth open, ears flatten, slow body stretch
     yawn: [
       {
         mood: 'sleepy',
@@ -465,8 +555,6 @@ export class ReactionEngine {
         body: { bodyScaleY: 1.0, bodyOffsetY: 0, mouthOpen: 0 },
       },
     ],
-
-    // C. Stretch: Paws reach down, tail arches high, ears shake
     stretch: [
       {
         mood: 'neutral',
@@ -479,8 +567,6 @@ export class ReactionEngine {
         body: { bodyScaleX: 0.92, bodyScaleY: 1.12, bodyOffsetY: -8, tailAngle: 15, tailWagSpeed: 2.8, activeEmote: 'sparkle' },
       },
     ],
-
-    // D. Chase Tail: Fox playfully circles head toward tail tip
     chaseTail: [
       {
         mood: 'curious',
@@ -493,8 +579,6 @@ export class ReactionEngine {
         body: { bodyTilt: -10.0, eyeGazeX: -0.7, tailAngle: -20, tailCurl: -30, tailWagSpeed: 4.0 },
       },
     ],
-
-    // E. Sneeze Wisp: Nose scrunches, tenses, *achoo!* bursts out a glowing wisp!
     sneezeWisp: [
       {
         mood: 'annoyed',
@@ -513,8 +597,6 @@ export class ReactionEngine {
         body: { bodyScaleX: 1.0, bodyScaleY: 1.0, bodyOffsetY: 0, tailWagSpeed: 2.5 },
       },
     ],
-
-    // F. Ear Twitch: Independent left then right ear flick
     earTwitch: [
       {
         mood: 'neutral',

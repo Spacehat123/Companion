@@ -1,12 +1,13 @@
 /**
  * web/character.js — Full HTML5 Canvas 2D Character Engine with Modular Species.
+ * Stage 1 Shippable v0.1.0
  * 
- * Manages:
- * - 60 FPS animation loop and HiDPI (devicePixelRatio) scaling
- * - Second-order spring physics (body squash/stretch, ears, tail follow-through)
- * - Blinking state and gaze easing
- * - Delegation of all species drawing to modular species file (web/species/fox.js)
- * - 3-Zone Shake-to-Controls morph layout with touch hit-testing
+ * Features:
+ * - Dynamic FPS: 60 FPS when active, ~30 FPS during calm idle
+ * - Battery saver: pauses loop completely when document.hidden
+ * - DPR capped at 2.0 to conserve GPU memory and battery on retina screens
+ * - Zero memory growth (fixed particle buffers)
+ * - HiDPI scaling with modular species rendering
  * - Direct touch body-part hit-testing (ears, tail, head, body)
  */
 
@@ -16,7 +17,7 @@ import { FoxSpecies } from './species/fox.js';
 export class CompanionCharacter {
   constructor(canvas) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+    this.ctx = canvas.getContext('2d', { alpha: true });
 
     // Motion preference
     this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -28,6 +29,7 @@ export class CompanionCharacter {
     this.cur = { ...BASE_STATE };
     this.tgt = { ...BASE_STATE };
     this.activeMood = 'neutral';
+    this.isInteracting = false;
 
     // Blinking State
     this.blinkScale = 1.0;
@@ -40,14 +42,20 @@ export class CompanionCharacter {
 
     // Layout Dimensions (Virtual 360x360 coordinate system)
     this.VIRTUAL_SIZE = 360;
-    this.dpr = window.devicePixelRatio || 1;
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2.0);
     this._resizeCanvas();
     window.addEventListener('resize', () => this._resizeCanvas());
 
-    // Animation Loop
+    // Performance & Battery Optimization
     this.lastTime = performance.now();
+    this.lastRenderTime = 0;
+    this.isPaused = false;
+    this.rafId = null;
+
     this.animate = this.animate.bind(this);
-    requestAnimationFrame(this.animate);
+    this._bindVisibilityHandler();
+
+    this.rafId = requestAnimationFrame(this.animate);
   }
 
   _resizeCanvas() {
@@ -55,10 +63,29 @@ export class CompanionCharacter {
     const cssWidth = rect.width || 360;
     const cssHeight = rect.height || 360;
     const cssSize = Math.min(cssWidth, cssHeight);
-    this.dpr = window.devicePixelRatio || 1;
-    this.canvas.width = cssSize * this.dpr;
-    this.canvas.height = cssSize * this.dpr;
-    this.scaleFactor = (cssSize * this.dpr) / this.VIRTUAL_SIZE;
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2.0);
+    this.canvas.width = Math.round(cssSize * this.dpr);
+    this.canvas.height = Math.round(cssSize * this.dpr);
+    this.scaleFactor = this.canvas.width / this.VIRTUAL_SIZE;
+  }
+
+  _bindVisibilityHandler() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.isPaused = true;
+        if (this.rafId) {
+          cancelAnimationFrame(this.rafId);
+          this.rafId = null;
+        }
+      } else {
+        this.isPaused = false;
+        this.lastTime = performance.now();
+        this.lastRenderTime = performance.now();
+        if (!this.rafId) {
+          this.rafId = requestAnimationFrame(this.animate);
+        }
+      }
+    });
   }
 
   setMood(moodName) {
@@ -90,7 +117,7 @@ export class CompanionCharacter {
     const scheduleNext = () => {
       const delay = CONSTANTS.blinkIntervalMin + Math.random() * (CONSTANTS.blinkIntervalMax - CONSTANTS.blinkIntervalMin);
       setTimeout(() => {
-        if (this.activeMood !== 'sleepy' || Math.random() < 0.25) {
+        if (!this.isPaused && (this.activeMood !== 'sleepy' || Math.random() < 0.25)) {
           this.isBlinking = true;
           setTimeout(() => {
             this.isBlinking = false;
@@ -109,14 +136,37 @@ export class CompanionCharacter {
     scheduleNext();
   }
 
+  isCalmIdle() {
+    return (
+      this.activeMood === 'neutral' &&
+      !this.isInteracting &&
+      this.cur.morphProgress < 0.05 &&
+      Math.abs(this.cur.bodyWobble) < 0.5 &&
+      Math.abs(this.cur.bodyOffsetY) < 1.0 &&
+      Math.abs(this.cur.bodyScaleX - 1.0) < 0.02
+    );
+  }
+
   animate(now) {
-    const dt = Math.min(0.05, (now - this.lastTime) / 1000);
+    if (this.isPaused) return;
+
+    // Dynamic Frame Rate: ~30 FPS during calm idle, 60 FPS when active
+    const targetInterval = this.isCalmIdle() ? 32.0 : 15.5;
+    const elapsedSinceRender = now - this.lastRenderTime;
+
+    if (elapsedSinceRender < targetInterval) {
+      this.rafId = requestAnimationFrame(this.animate);
+      return;
+    }
+
+    const dt = Math.min(0.06, (now - this.lastTime) / 1000);
     this.lastTime = now;
+    this.lastRenderTime = now;
 
     this._updatePhysics(dt, now);
     this._render(now);
 
-    requestAnimationFrame(this.animate);
+    this.rafId = requestAnimationFrame(this.animate);
   }
 
   _updatePhysics(dt, now) {
@@ -155,14 +205,14 @@ export class CompanionCharacter {
       }
     }
 
-    // Copy instantaneous boolean / discrete attributes
+    // Discrete attributes
     cur.eyeShape = tgt.eyeShape;
     cur.mouthStyle = tgt.mouthStyle;
     cur.tailPuff = tgt.tailPuff;
     cur.pawWiggle = tgt.pawWiggle;
     cur.activeEmote = tgt.activeEmote;
 
-    // 5. Update Modular Species Internal Physics (Tail spring-chain, wisps, sneeze bursts)
+    // 5. Update Species Physics (Tail spring-chain, wisps, sneeze bursts)
     if (this.species && this.species.updatePhysics) {
       this.species.updatePhysics(dt, cur, now);
     }
@@ -192,7 +242,6 @@ export class CompanionCharacter {
     ctx.save();
     // Scale from virtual 360x360 coordinate system to device pixels
     ctx.scale(this.scaleFactor, this.scaleFactor);
-    // Center origin at middle of virtual stage (180, 180)
     ctx.translate(180, 180);
 
     // 1. Draw Modular Species Character
@@ -226,14 +275,9 @@ export class CompanionCharacter {
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // 3 Tactile Buttons: Left (PREV), Center (PLAY), Right (NEXT)
-    // Left: PREV (-95, 70)
+    // 3 Tactile Buttons
     this._drawControlButton(ctx, -95, 70, 32, this.btnScales.PREV, this.btnHover.PREV, 'PREV');
-
-    // Center: PLAY (0, 70)
     this._drawControlButton(ctx, 0, 70, 36, this.btnScales.PLAY, this.btnHover.PLAY, 'PLAY');
-
-    // Right: NEXT (95, 70)
     this._drawControlButton(ctx, 95, 70, 32, this.btnScales.NEXT, this.btnHover.NEXT, 'NEXT');
 
     ctx.restore();
@@ -244,7 +288,6 @@ export class CompanionCharacter {
     ctx.translate(cx, cy);
     ctx.scale(scale, scale);
 
-    // Button body
     const grad = ctx.createLinearGradient(0, -radius, 0, radius);
     if (type === 'PLAY') {
       grad.addColorStop(0, hover ? '#0284C7' : '#0369A1');
@@ -263,7 +306,7 @@ export class CompanionCharacter {
     ctx.lineWidth = hover ? 2.5 : 1.5;
     ctx.stroke();
 
-    // Button Icons (Vector glyphs)
+    // Vector Glyphs
     ctx.fillStyle = '#FFFFFF';
     ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 2.5;
@@ -271,7 +314,6 @@ export class CompanionCharacter {
     ctx.lineJoin = 'round';
 
     if (type === 'PREV') {
-      // Bar + Left triangle
       ctx.fillRect(-10, -8, 2.5, 16);
       ctx.beginPath();
       ctx.moveTo(8, -8);
@@ -280,10 +322,7 @@ export class CompanionCharacter {
       ctx.closePath();
       ctx.fill();
     } else if (type === 'PLAY') {
-      // Play/Pause combination icon
-      // Left Pause Bar
       ctx.fillRect(-8, -9, 4, 18);
-      // Right Play Triangle
       ctx.beginPath();
       ctx.moveTo(0, -9);
       ctx.lineTo(10, 0);
@@ -291,7 +330,6 @@ export class CompanionCharacter {
       ctx.closePath();
       ctx.fill();
     } else if (type === 'NEXT') {
-      // Right triangle + Bar
       ctx.beginPath();
       ctx.moveTo(-8, -8);
       ctx.lineTo(4, 0);
@@ -304,16 +342,11 @@ export class CompanionCharacter {
     ctx.restore();
   }
 
-  /**
-   * Hit Testing:
-   * Maps screen coordinates to Virtual Stage (360x360 centered at 0,0).
-   */
   getHitInfo(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
 
-    // Convert to virtual 360x360 coordinates
     const vx = (x * this.dpr) / this.scaleFactor - 180;
     const vy = (y * this.dpr) / this.scaleFactor - 180;
 
