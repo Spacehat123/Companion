@@ -1,11 +1,13 @@
 /**
- * smiletest.js — "The Smile Test" Empirical Validation Engine.
+ * web/smiletest.js — "The Smile Test" Empirical Validation Engine.
+ * 
  * Features:
- * - "Did that make you smile?" prompt with Yes / Not really buttons
+ * - Unobtrusive bottom strip prompt that appears 2.5s after interaction and auto-hides
+ * - "Did that make you smile?" with Yes / Not really buttons
  * - Per-reaction Yes/No tally persisted to localStorage
  * - Automatic tracking of time from page load to the first "Yes"
  * - Export button that copies the telemetry JSON to clipboard
- * - Support for ?test=1 query param (hides developer buttons for unbiased user testing)
+ * - Support for ?dev=1 (shows full dev panel) and ?test=1 (clean tester mode)
  */
 
 export class SmileTestManager {
@@ -20,13 +22,25 @@ export class SmileTestManager {
     this.pageStartTime = Date.now();
     this.firstSmileTimeSec = null;
     this.currentPendingAction = null;
+    this.autoHideTimer = null;
+    this.showTimer = null;
 
     // Load persisted tally
-    this.STORAGE_KEY = 'companion_smile_test_v1';
+    this.STORAGE_KEY = 'companion_smile_test_v2';
     this.data = this._loadData();
 
     this._bindEvents();
     this.render();
+  }
+
+  static isDevMode() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('dev') === '1';
+  }
+
+  static isTestMode() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('test') === '1';
   }
 
   _loadData() {
@@ -58,12 +72,24 @@ export class SmileTestManager {
 
   prompt(actionName) {
     this.currentPendingAction = actionName;
-    if (this.promptEl) {
-      this.promptEl.classList.add('visible');
-    }
+    clearTimeout(this.showTimer);
+    clearTimeout(this.autoHideTimer);
+
+    // Show unobtrusively after 2.2 seconds (allowing user to enjoy reaction first)
+    this.showTimer = setTimeout(() => {
+      if (this.promptEl) {
+        this.promptEl.classList.add('visible');
+      }
+      // Auto-hide after 7 seconds if ignored
+      this.autoHideTimer = setTimeout(() => {
+        this.dismiss();
+      }, 7000);
+    }, 2200);
   }
 
   dismiss() {
+    clearTimeout(this.autoHideTimer);
+    clearTimeout(this.showTimer);
     this.currentPendingAction = null;
     if (this.promptEl) {
       this.promptEl.classList.remove('visible');
@@ -116,7 +142,7 @@ export class SmileTestManager {
 
     // List per-action
     if (entries.length === 0) {
-      this.tallyListEl.innerHTML = '<li class="muted">No test answers yet. Tap or shake to start!</li>';
+      this.tallyListEl.innerHTML = '<li class="muted">No test answers yet. Touch or play with kitsune to start!</li>';
       return;
     }
 
@@ -159,31 +185,23 @@ export class SmileTestManager {
     } else {
       prompt('Copy your Smile Test JSON:', jsonStr);
     }
-    return jsonStr;
   }
 
-  reset() {
-    if (confirm('Clear all Smile Test answers and reset telemetry?')) {
+  resetData() {
+    if (confirm('Reset all Smile Test data?')) {
       this.data = {};
       this.firstSmileTimeSec = null;
-      this.pageStartTime = Date.now();
       this._saveData();
       this.render();
     }
   }
 
   _bindEvents() {
-    if (this.exportBtn) this.exportBtn.onclick = () => this.exportJSON();
-    if (this.resetBtn) this.resetBtn.onclick = () => this.reset();
-
-    const yesBtn = document.getElementById('smileYesBtn');
-    const noBtn = document.getElementById('smileNoBtn');
-    if (yesBtn) yesBtn.onclick = () => this.recordAnswer(true);
-    if (noBtn) noBtn.onclick = () => this.recordAnswer(false);
-  }
-
-  static isTestMode() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('test') === '1' || params.get('test') === 'true';
+    if (this.exportBtn) {
+      this.exportBtn.onclick = () => this.exportJSON();
+    }
+    if (this.resetBtn) {
+      this.resetBtn.onclick = () => this.resetData();
+    }
   }
 }
