@@ -1,14 +1,16 @@
 /**
  * sw.js — Service Worker for Offline PWA Support.
+ * Version 2: Kitsune Fox Spirit Cub & Direct Touch Gestures.
  */
 
-const CACHE_NAME = 'companion-stage1-v1';
+const CACHE_NAME = 'companion-stage1-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './moods.js',
   './reactions.js',
   './character.js',
+  './species/fox.js',
   './sensors.js',
   './smiletest.js',
   './manifest.json',

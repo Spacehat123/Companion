@@ -75,16 +75,16 @@ flowchart TD
     S4 --> S5["Stage 5: Battery & Shell Design\n(Current-Sized Cell, Modular Snap-On Pack, 3D Shell)"]
 ```
 
-### Stage 1: Phone Character (The "Smile Test" & Emotional Core) — *(COMPLETE - WEB PWA IMPLEMENTED)*
-- **Goal**: Validate that the character generates genuine, spontaneous user delight (*"The Smile Test"*) before manufacturing hardware.
-- **Status**: **Fully built and running as a zero-dependency mobile PWA in `web/`**:
-  - `web/moods.js`: 10 core moods (`neutral`, `happy`, `excited`, `sleepy`, `curious`, `sad`, `annoyed`, `love`, `surprised`, `dizzy`), BASE target parameters, and centralized `CONSTANTS`.
-  - `web/reactions.js`: Cancel-token async step sequences (`tap`, `pet`, `shake`, `tiltL`, `tiltR`, `flip`, `sleep`, `wake`), random non-repeating idle micro-behaviors (4-8s), and the 3-zone Shake-to-Controls morph (`⏮`, `⏯`, `⏭`).
-  - `web/character.js`: 60 FPS HTML5 Canvas 2D spring physics engine faithfully porting the PySide6 anatomy: sky-blue chassis, head gloss arc, amber ear nubs with mint LEDs, creamy belly patch, pulsing ruby heart gem, rosy blush cheeks, deep sapphire eyes with dual specular sparkles and happy `^ ^` crescents, mitten paws with waving, and boots with sole treads.
-  - `web/sensors.js`: `devicemotion` hardware shake with acceleration delta threshold, `deviceorientation` tilt & upside-down flip, iOS 13+ permission flow, and touch Poke vs Pet (hold).
-  - `web/smiletest.js`: Post-reaction "Did that make you smile?" prompt, `localStorage` tally, time-to-first-smile stopwatch, JSON telemetry export, and `?test=1` URL mode that hides debug buttons for real-world user testing.
-  - `web/manifest.json` & `web/sw.js`: Installable PWA with offline caching.
-  - `web/screenshots/`: Automated headless browser verification captures of all 10 moods and key reactions.
+### Stage 1: Phone Character (The "Smile Test" & Emotional Core) — *(COMPLETE - KITSUNE FOX SPIRIT CUB WEB PWA)*
+- **Goal**: Validate that the creature generates genuine, spontaneous user delight (*"The Smile Test"*) before manufacturing hardware.
+- **Status**: **Fully built and running as a zero-dependency, full-bleed mobile PWA in `web/`**:
+  - `web/species/fox.js`: Modular species architecture isolating creature rendering. Features a mythic fox-spirit cub (kitsune) with warm orange/cream palette, independently driven ears (perked, flat, droopy, one-up-one-down), 5-segment spring-chain tail with follow-through lag (wag, puff, curl, swish), glowing kitsune forehead crest, sparkling tail tip, ambient orbiting spirit wisps (*kitsune-bi*), and pure Canvas vector emotes (`!`, `?`, `♥`, `♪`, `✨`, `💤`).
+  - `web/character.js`: 60 FPS HTML5 Canvas 2D engine coordinating second-order spring physics, eye saccades/blinks, modular species rendering, and the 3-zone Shake-to-Controls morph layout (`⏮`, `⏯`, `⏭`).
+  - `web/reactions.js`: Cancel-token async step runner, direct touch gestures (body poke, ear tap, tail tap, pet hold, stroke drag, flick fling), autonomous life micro-behaviors (look around, yawn, stretch, chase tail, sneeze wisp, ear twitch), 30s sleep watchdog, and dynamic wake (grumpy vs happy).
+  - `web/sensors.js`: Direct touch hit-testing, drag/stroke detection, quick flick velocity detection, hardware `devicemotion` shake & `deviceorientation` tilt/flip, desktop keyboard shortcuts (`S`, `F`, `L`, `R`, `Z`), and a single-tap friendly motion permission unlock screen.
+  - `web/smiletest.js`: Unobtrusive bottom strip prompt appearing 2.2s after interactions and auto-fading after 7s, persistent `localStorage` tally, time-to-first-smile stopwatch, JSON telemetry export, and clean URL modes (`?dev=1` for dev tools, default and `?test=1` for pure creature).
+  - `web/sw.js`: PWA Service Worker (v2) caching all assets for offline execution.
+  - `web/screenshots/`: Automated headless browser verification captures of all 10 moods and key gestures/reactions.
 
 ### Stage 2: Intent Layer (Deterministic + Banter Fallback)
 - **Goal**: Zero user confusion; snappy (<50ms) action execution; 0% robotic error rates.
